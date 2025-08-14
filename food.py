@@ -1,54 +1,76 @@
 import streamlit as st
 import random
-
-st.set_page_config(page_title="🍔 오늘의 야식 추천기", page_icon="🍕")
-st.markdown("<h1 style='text-align: center; color: #FF6F61;'>🍕 오늘의 야식 추천기 🍟</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: #555;'>오늘 밤 뭐 먹을지 고민된다면? 🎯</p>", unsafe_allow_html=True)
+from streamlit_lottie import st_lottie
+import requests
 
 # -----------------------------
-# 야식 메뉴 데이터 (이모지 포함)
+# Lottie 애니메이션 함수
 # -----------------------------
-snacks = {
-    "치킨 🍗": {"calories": 1200, "difficulty": "없음", "delivery": "✅ 가능"},
-    "라면 🍜": {"calories": 500, "difficulty": "낮음", "delivery": "❌ 불가"},
-    "떡볶이 🌶️": {"calories": 600, "difficulty": "낮음", "delivery": "✅ 가능"},
-    "피자 🍕": {"calories": 1300, "difficulty": "없음", "delivery": "✅ 가능"},
-    "야식 도시락 🍱": {"calories": 800, "difficulty": "중간", "delivery": "❌ 불가"},
-    "김밥 🍙": {"calories": 400, "difficulty": "낮음", "delivery": "✅ 가능"},
-    "핫도그 🌭": {"calories": 450, "difficulty": "낮음", "delivery": "✅ 가능"},
-    "샌드위치 🥪": {"calories": 350, "difficulty": "낮음", "delivery": "✅ 가능"},
-    "만두 🥟": {"calories": 550, "difficulty": "중간", "delivery": "❌ 불가"},
-    "치즈스틱 🧀": {"calories": 300, "difficulty": "낮음", "delivery": "❌ 불가"},
-    "튀김 🍤": {"calories": 600, "difficulty": "중간", "delivery": "✅ 가능"},
-    "순대 🌭": {"calories": 500, "difficulty": "낮음", "delivery": "✅ 가능"},
-    "샐러드 🥗": {"calories": 250, "difficulty": "낮음", "delivery": "✅ 가능"},
-    "커피/음료 ☕": {"calories": 150, "difficulty": "없음", "delivery": "✅ 가능"},
-    "아이스크림 🍦": {"calories": 200, "difficulty": "없음", "delivery": "✅ 가능"},
-}
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
 
 # -----------------------------
-# 사용자 선택
+# 페이지 설정
 # -----------------------------
-snack_list = list(snacks.keys())
-preferences = st.multiselect("🍴 먹고 싶은 음식 종류를 선택하세요:", snack_list)
+st.set_page_config(page_title="🎮 미니 게임 월드", page_icon="🕹️")
+st.markdown("<h1 style='text-align:center; color:#FF6F61;'>🎮 미니 게임 월드 🕹️</h1>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#555;'>여러 재미있는 게임을 즐기며 스트레스 날리기! ✨</p>", unsafe_allow_html=True)
+st.markdown("---")
+
+# -----------------------------
+# 게임 선택
+# -----------------------------
+games = ["가위바위보 ✊✌️✋", "숫자 맞추기 🔢", "틱택토 ❌⭕"]
+selected_game = st.selectbox("🎯 플레이할 게임을 선택하세요:", games)
 
 st.markdown("---")
 
 # -----------------------------
-# 추천 기능
+# 가위바위보 게임
 # -----------------------------
-if st.button("🎯 추천받기", use_container_width=True):
-    if preferences:
-        choice = random.choice(preferences)
-        info = snacks[choice]
-        
-        st.markdown(f"<h2 style='text-align:center; color:#FF6347;'>오늘의 추천 야식: {choice} 🎉</h2>", unsafe_allow_html=True)
-        
-        st.markdown(f"<p style='font-size:18px; color:#FF4500;'>🔥 칼로리: {info['calories']} kcal</p>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size:18px; color:#32CD32;'>⚡ 조리 난이도: {info['difficulty']}</p>", unsafe_allow_html=True)
-        st.markdown(f"<p style='font-size:18px; color:#1E90FF;'>📦 배달 가능 여부: {info['delivery']}</p>", unsafe_allow_html=True)
-        
-        st.snow()
-    else:
+if selected_game.startswith("가위바위보"):
+    st.subheader("✂️ 가위바위보 게임 ✋")
+    user_choice = st.radio("선택하세요:", ["가위 ✌️", "바위 ✊", "보 ✋"])
+    if st.button("🕹️ 결과 보기"):
+        computer_choice = random.choice(["가위 ✌️", "바위 ✊", "보 ✋"])
+        st.markdown(f"💻 **컴퓨터 선택:** {computer_choice}")
+        if user_choice == computer_choice:
+            st.info("무승부! 🤝")
+        elif (user_choice == "가위 ✌️" and computer_choice == "보 ✋") or \
+             (user_choice == "바위 ✊" and computer_choice == "가위 ✌️") or \
+             (user_choice == "보 ✋" and computer_choice == "바위 ✊"):
+            st.success("🎉 승리! 축하합니다! 🎊")
+            st.balloons()
+        else:
+            st.error("😢 패배! 다음엔 잘 할 수 있어요!")
+
+# -----------------------------
+# 숫자 맞추기 게임
+# -----------------------------
+elif selected_game.startswith("숫자 맞추기"):
+    st.subheader("🔢 숫자 맞추기 게임 🔢")
+    number_to_guess = random.randint(1, 10)
+    guess = st.number_input("1~10 사이 숫자를 입력하세요:", min_value=1, max_value=10, step=1)
+    if st.button("🕹️ 확인"):
+        if guess == number_to_guess:
+            st.success(f"🎉 정답! 숫자는 {number_to_guess}였습니다.")
+            # Lottie 불꽃 애니메이션
+            lottie_fire = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_touohxv0.json")
+            if lottie_fire:
+                st_lottie(lottie_fire, height=200, key="fire")
+        else:
+            st.error(f"❌ 틀렸어요. 숫자는 {number_to_guess}였습니다.")
+
+# -----------------------------
+# 틱택토 게임 (간단 버전)
+# -----------------------------
+elif selected_game.startswith("틱택토"):
+    st.subheader("❌⭕ 틱택토 게임 (간단)")
+    st.info("틱택토는 간단히 표시만 해주는 예시입니다. 확장하여 실제 플레이 가능!")
+    st.markdown("⬜⬜⬜  ⬜⬜⬜  ⬜⬜⬜\n⬜⬜⬜  ⬜⬜⬜  ⬜⬜⬜\n⬜⬜⬜  ⬜⬜⬜  ⬜⬜⬜")
+
         st.warning("하나 이상의 음식을 선택해주세요! ⚠️")
 
