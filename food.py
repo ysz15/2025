@@ -48,7 +48,7 @@ if st.button("🎯 추천받기", use_container_width=True):
         st.markdown(f"<p style='font-size:18px; color:#32CD32;'>⚡ 조리 난이도: {info['difficulty']}</p>", unsafe_allow_html=True)
         st.markdown(f"<p style='font-size:18px; color:#1E90FF;'>📦 배달 가능 여부: {info['delivery']}</p>", unsafe_allow_html=True)
         
-        st.balloons()
+        st.snow()
     else:
         st.warning("하나 이상의 음식을 선택해주세요! ⚠️")
 
