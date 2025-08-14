@@ -1,2 +1,2 @@
 import streamlit as st
-st.title('환영합니다(｡•̀ᴗ-)✧')
+st.title('주4일제로 바꿔주세요')
