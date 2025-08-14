@@ -1,6 +1,17 @@
-# app.py
 import streamlit as st
-from mbti_data import mbti_jobs
+
+# MBTI 데이터
+mbti_jobs = {
+    "INTJ": {
+        "jobs": ["데이터 분석가", "전략 기획가", "연구원"],
+        "description": "분석적이고 계획적인 사고로 장기 전략을 설계하는 데 강합니다."
+    },
+    "ENFP": {
+        "jobs": ["광고 기획자", "콘텐츠 크리에이터", "이벤트 플래너"],
+        "description": "창의적이고 사람들과 교류하는 걸 즐기며 새로운 시도를 두려워하지 않습니다."
+    }
+    # 나머지 MBTI 데이터도 추가
+}
 
 st.set_page_config(page_title="MBTI 직업 추천", page_icon="💼")
 
