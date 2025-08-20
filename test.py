@@ -89,18 +89,14 @@ st.info(quote)
 # =========================
 if not df.empty:
     st.subheader("📊 공부 시간 통계")
-    
-    # 날짜 타입 확인 및 변환
-    if df["날짜"].dtype != "datetime64[ns]":
-        df["날짜"] = pd.to_datetime(df["날짜"])
-    
+
     # 일별 합계
     daily = df.groupby("날짜")["공부시간(분)"].sum().reset_index()
     daily_chart = alt.Chart(daily).mark_bar(color=theme_color).encode(
         x=alt.X("날짜:T", title="날짜"),
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="일별 공부 시간")
-    
+
     # 주차별 합계
     df["주차"] = df["날짜"].dt.to_period("W").apply(lambda r: r.start_time)
     weekly = df.groupby("주차")["공부시간(분)"].sum().reset_index()
@@ -108,7 +104,7 @@ if not df.empty:
         x=alt.X("주차:T", title="주차 시작일"),
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="주차별 공부 시간")
-    
+
     # 월별 합계
     df["월"] = df["날짜"].dt.to_period("M").apply(lambda r: r.start_time)
     monthly = df.groupby("월")["공부시간(분)"].sum().reset_index()
@@ -116,11 +112,11 @@ if not df.empty:
         x=alt.X("월:T", title="월"),
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="월별 공부 시간")
-    
+
     st.altair_chart(daily_chart, use_container_width=True)
     st.altair_chart(weekly_chart, use_container_width=True)
     st.altair_chart(monthly_chart, use_container_width=True)
-    
+
     # 과목별 비율
     subject_total = df.groupby("과목")["공부시간(분)"].sum().reset_index()
     st.subheader("📌 과목별 공부 시간 비율")
