@@ -62,6 +62,20 @@ with st.form("study_form"):
         df.to_csv(DATA_FILE, index=False)
         st.success("✅ 저장 완료!")
 
+st.subheader("📚 전체 공부 기록 확인")
+
+# 데이터가 있으면 테이블/확장형으로 표시
+if not df.empty:
+    # 날짜 최신순으로 정렬
+    df_sorted = df.sort_values(by="날짜", ascending=False)
+    
+    # 확장형으로 과목별 / 날짜별 확인 가능
+    for i, row in df_sorted.iterrows():
+        with st.expander(f"{row['날짜']} - {row['과목']} ({row['공부시간(분)']}분)"):
+            st.markdown(f"**목표:** {row['목표']}")
+            st.markdown(f"**메모:** {row.get('메모','')}")
+            st.markdown(f"**공부 내용:** {row.get('공부 내용','')}")
+
 # =========================
 # 동기부여 문구
 # =========================
