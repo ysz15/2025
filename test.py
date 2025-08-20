@@ -98,7 +98,7 @@ if not df.empty:
     ).properties(title="일별 공부 시간")
 
     # 주차별 합계 (안전하게 to_timestamp 사용)
-    df["주차"] = df["날짜"].dt.to_period("W").apply(lambda r: r.to_timestamp())
+    df["주차"] = df["날짜"].dt.to_period("W").apply(lambda r: r.start_time)
     weekly = df.groupby("주차")["공부시간(분)"].sum().reset_index()
     weekly_chart = alt.Chart(weekly).mark_line(point=True, color=theme_color).encode(
         x=alt.X("주차:T", title="주차 시작일"),
@@ -106,7 +106,7 @@ if not df.empty:
     ).properties(title="주차별 공부 시간")
 
     # 월별 합계
-    df["월"] = df["날짜"].dt.to_period("M").apply(lambda r: r.to_timestamp())
+    df["월"] = df["날짜"].dt.to_period("M").apply(lambda r: r.start_time)
     monthly = df.groupby("월")["공부시간(분)"].sum().reset_index()
     monthly_chart = alt.Chart(monthly).mark_area(color=theme_color, opacity=0.6).encode(
         x=alt.X("월:T", title="월"),
