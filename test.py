@@ -97,8 +97,8 @@ if not df.empty:
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="일별 공부 시간")
 
-    # 주차별 합계
-    df["주차"] = df["날짜"].dt.to_period("W").apply(lambda r: r.start_time)
+    # 주차별 합계 (안전하게 to_timestamp 사용)
+    df["주차"] = df["날짜"].dt.to_period("W").apply(lambda r: r.to_timestamp())
     weekly = df.groupby("주차")["공부시간(분)"].sum().reset_index()
     weekly_chart = alt.Chart(weekly).mark_line(point=True, color=theme_color).encode(
         x=alt.X("주차:T", title="주차 시작일"),
@@ -106,7 +106,7 @@ if not df.empty:
     ).properties(title="주차별 공부 시간")
 
     # 월별 합계
-    df["월"] = df["날짜"].dt.to_period("M").apply(lambda r: r.start_time)
+    df["월"] = df["날짜"].dt.to_period("M").apply(lambda r: r.to_timestamp())
     monthly = df.groupby("월")["공부시간(분)"].sum().reset_index()
     monthly_chart = alt.Chart(monthly).mark_area(color=theme_color, opacity=0.6).encode(
         x=alt.X("월:T", title="월"),
@@ -121,6 +121,5 @@ if not df.empty:
     subject_total = df.groupby("과목")["공부시간(분)"].sum().reset_index()
     st.subheader("📌 과목별 공부 시간 비율")
     st.dataframe(subject_total)
-
 else:
     st.warning("아직 기록이 없습니다. 오늘의 첫 공부를 기록해보세요! ✨")
