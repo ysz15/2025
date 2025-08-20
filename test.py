@@ -27,15 +27,13 @@ quotes = [
 if os.path.exists(DATA_FILE):
     df = pd.read_csv(DATA_FILE)
 else:
-    df = pd.DataFrame(columns=["날짜", "과목", "목표", "공부시간(분)", "메모"])
+    df = pd.DataFrame(columns=["날짜", "과목", "목표", "공부시간(분)", "메모", "공부 내용"])
 
 # =========================
 # 날짜 안전 처리
 # =========================
 if not df.empty:
-    # 변환 불가 값은 NaT 처리
     df["날짜"] = pd.to_datetime(df["날짜"], errors="coerce")
-    # NaT 제거
     df = df.dropna(subset=["날짜"])
 
 # =========================
@@ -53,9 +51,10 @@ st.markdown(f"<h1 style='color:{theme_color}'>{icon} 공부 기록 다이어리<
 with st.form("study_form"):
     st.subheader("✏️ 오늘의 공부 기록")
     subject = st.text_input("과목")
-    goal = st.text_input("목표")
+    goal = st.text_input("오늘 목표")
     time = st.number_input("공부시간(분)", min_value=0, step=10)
     memo = st.text_area("간단 메모")
+    content = st.text_area("공부 내용", placeholder="오늘 공부한 내용을 기록해보세요.")
     submitted = st.form_submit_button("저장")
 
     if submitted:
@@ -65,11 +64,12 @@ with st.form("study_form"):
             st.warning("공부 시간을 입력하세요")
         else:
             new_data = pd.DataFrame({
-                "날짜": [datetime.now().strftime("%Y-%m-%d")],  # 문자열로 통일
+                "날짜": [datetime.now().strftime("%Y-%m-%d")],
                 "과목": [subject],
                 "목표": [goal],
                 "공부시간(분)": [time],
-                "메모": [memo]
+                "메모": [memo],
+                "공부 내용": [content]
             })
             df = pd.concat([df, new_data], ignore_index=True)
             df.to_csv(DATA_FILE, index=False)
@@ -93,6 +93,30 @@ if not df.empty:
         with st.expander(f"{row['날짜']} - {row['과목']} ({row['공부시간(분)']}분)"):
             st.markdown(f"**목표:** {row['목표']}")
             st.markdown(f"**메모:** {row.get('메모','')}")
+            st.markdown(f"**공부 내용:** {row.get('공부 내용','')}")
+
+# =========================
+# 과목별 공부 내용 확인
+# =========================
+if not df.empty:
+    st.subheader("📝 과목별 공부 내용 확인")
+    subjects = df["과목"].unique().tolist()
+    selected_subject = st.selectbox("확인할 과목 선택", ["전체"] + subjects)
+
+    if selected_subject == "전체":
+        filtered_df = df
+    else:
+        filtered_df = df[df["과목"] == selected_subject]
+
+    if filtered_df.empty:
+        st.info("해당 과목의 기록이 없습니다.")
+    else:
+        filtered_df = filtered_df.sort_values(by="날짜", ascending=False)
+        for i, row in filtered_df.iterrows():
+            with st.expander(f"{row['날짜']} - {row['과목']} ({row['공부시간(분)']}분)"):
+                st.markdown(f"**목표:** {row['목표']}")
+                st.markdown(f"**메모:** {row.get('메모','')}")
+                st.markdown(f"**공부 내용:** {row.get('공부 내용','')}")
 
 # =========================
 # 공부 시간 통계
@@ -100,7 +124,7 @@ if not df.empty:
 if not df.empty:
     st.subheader("📊 공부 시간 통계")
 
-    # 날짜를 datetime으로 변환 (안전하게)
+    # 안전하게 datetime 변환
     df["날짜"] = pd.to_datetime(df["날짜"], errors="coerce")
     df = df.dropna(subset=["날짜"])
 
@@ -137,3 +161,4 @@ if not df.empty:
     st.dataframe(subject_total)
 else:
     st.warning("아직 기록이 없습니다. 오늘의 첫 공부를 기록해보세요! ✨")
+
