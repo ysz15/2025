@@ -29,9 +29,7 @@ if os.path.exists(DATA_FILE):
 else:
     df = pd.DataFrame(columns=["날짜", "과목", "목표", "공부시간(분)", "메모", "공부 내용"])
 
-# =========================
-# 날짜 안전 처리
-# =========================
+# 날짜 변환
 if not df.empty:
     df["날짜"] = pd.to_datetime(df["날짜"], errors="coerce")
     df = df.dropna(subset=["날짜"])
@@ -84,39 +82,56 @@ quote = random.choice(quotes)
 st.info(quote)
 
 # =========================
-# 전체 기록 확인
+# 전체 공부 기록
 # =========================
 st.subheader("📚 전체 공부 기록")
 if not df.empty:
     df_sorted = df.sort_values(by="날짜", ascending=False)
-    for i, row in df_sorted.iterrows():
-        with st.expander(f"{row['날짜']} - {row['과목']} ({row['공부시간(분)']}분)"):
+    for _, row in df_sorted.iterrows():
+        with st.expander(f"{row['날짜'].strftime('%Y-%m-%d')} - {row['과목']} ({row['공부시간(분)']}분)"):
             st.markdown(f"**목표:** {row['목표']}")
-            st.markdown(f"**메모:** {row.get('메모','')}")
-            st.markdown(f"**공부 내용:** {row.get('공부 내용','')}")
+            st.markdown(f"**메모:** {row.get('메모', '')}")
+            st.markdown(f"**공부 내용:** {row.get('공부 내용', '')}")
+else:
+    st.info("아직 공부 기록이 없습니다. 새로운 기록을 추가해보세요!")
 
 # =========================
 # 과목별 공부 내용 확인
 # =========================
 if not df.empty:
     st.subheader("📝 과목별 공부 내용 확인")
-    subjects = df["과목"].unique().tolist()
-    selected_subject = st.selectbox("확인할 과목 선택", ["전체"] + subjects)
 
+    # 과목 선택
+    subjects = df["과목"].unique().tolist()
+    selected_subject = st.selectbox("과목 선택", ["전체"] + subjects)
+
+    # 검색 기능
+    search_query = st.text_input("🔍 검색어 입력 (메모나 공부 내용에서 검색)", placeholder="예: 미적분, 세포, 확률...")
+
+    # 필터링
     if selected_subject == "전체":
-        filtered_df = df
+        filtered_df = df.copy()
     else:
         filtered_df = df[df["과목"] == selected_subject]
 
+    if search_query:
+        filtered_df = filtered_df[
+            filtered_df.apply(
+                lambda row: search_query.lower() in str(row['공부 내용']).lower() 
+                or search_query.lower() in str(row['메모']).lower(), axis=1
+            )
+        ]
+
+    # 표시
     if filtered_df.empty:
-        st.info("해당 과목의 기록이 없습니다.")
+        st.info("조건에 맞는 기록이 없습니다.")
     else:
         filtered_df = filtered_df.sort_values(by="날짜", ascending=False)
-        for i, row in filtered_df.iterrows():
-            with st.expander(f"{row['날짜']} - {row['과목']} ({row['공부시간(분)']}분)"):
+        for _, row in filtered_df.iterrows():
+            with st.expander(f"{row['날짜'].strftime('%Y-%m-%d')} - {row['과목']} ({row['공부시간(분)']}분)"):
                 st.markdown(f"**목표:** {row['목표']}")
-                st.markdown(f"**메모:** {row.get('메모','')}")
-                st.markdown(f"**공부 내용:** {row.get('공부 내용','')}")
+                st.markdown(f"**메모:** {row.get('메모', '')}")
+                st.markdown(f"**공부 내용:** {row.get('공부 내용', '')}")
 
 # =========================
 # 공부 시간 통계
@@ -124,7 +139,6 @@ if not df.empty:
 if not df.empty:
     st.subheader("📊 공부 시간 통계")
 
-    # 안전하게 datetime 변환
     df["날짜"] = pd.to_datetime(df["날짜"], errors="coerce")
     df = df.dropna(subset=["날짜"])
 
@@ -134,6 +148,7 @@ if not df.empty:
         x=alt.X("날짜:T", title="날짜"),
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="일별 공부 시간")
+    st.altair_chart(daily_chart, use_container_width=True)
 
     # 주차별 합계
     df["주차"] = df["날짜"].dt.to_period("W").apply(lambda r: r.start_time)
@@ -142,6 +157,7 @@ if not df.empty:
         x=alt.X("주차:T", title="주차 시작일"),
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="주차별 공부 시간")
+    st.altair_chart(weekly_chart, use_container_width=True)
 
     # 월별 합계
     df["월"] = df["날짜"].dt.to_period("M").apply(lambda r: r.start_time)
@@ -150,15 +166,13 @@ if not df.empty:
         x=alt.X("월:T", title="월"),
         y=alt.Y("공부시간(분):Q", title="공부 시간(분)")
     ).properties(title="월별 공부 시간")
-
-    st.altair_chart(daily_chart, use_container_width=True)
-    st.altair_chart(weekly_chart, use_container_width=True)
     st.altair_chart(monthly_chart, use_container_width=True)
 
     # 과목별 비율
-    subject_total = df.groupby("과목")["공부시간(분)"].sum().reset_index()
     st.subheader("📌 과목별 공부 시간 비율")
+    subject_total = df.groupby("과목")["공부시간(분)"].sum().reset_index()
     st.dataframe(subject_total)
 else:
     st.warning("아직 기록이 없습니다. 오늘의 첫 공부를 기록해보세요! ✨")
+
 
