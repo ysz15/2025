@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-
+import plotly.express as px
 
 # 제목
 st.title("🌿 교실 환기 방식 분석 프로그램")
