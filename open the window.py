@@ -53,14 +53,6 @@ st.dataframe(data)
 # 데이터 전처리
 # -----------------------------
 
-st.subheader("2. 데이터 전처리")
-
-st.write("결측치 확인")
-
-missing = data.isnull().sum()
-
-st.write(missing)
-
 
 # 결측치 제거
 data = data.dropna()
