@@ -48,17 +48,11 @@ st.dataframe(data)
 # 결측치 처리
 # -----------------------------
 
-st.subheader("2. 데이터 전처리")
-
-st.write("결측치 개수")
 
 st.write(data.isnull().sum())
 
 
 data = data.dropna()
-
-
-st.write("결측치 제거 후 데이터")
 
 st.dataframe(data)
 
