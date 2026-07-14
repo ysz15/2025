@@ -52,7 +52,6 @@ st.dataframe(data)
 
 data = data.dropna()
 
-st.dataframe(data)
 
 
 
