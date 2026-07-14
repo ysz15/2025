@@ -49,8 +49,6 @@ st.dataframe(data)
 # -----------------------------
 
 
-st.write(data.isnull().sum())
-
 
 data = data.dropna()
 
