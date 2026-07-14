@@ -131,3 +131,27 @@ st.write(
     가장 효과적인 방식으로 판단하였다.
     """
 )
+
+# -----------------------------
+# 히트맵 시각화
+# -----------------------------
+
+st.subheader("4. 환기 방식별 평가 요소 비교 (히트맵)")
+
+heatmap_data = data.set_index("환기방식")[
+    ["답답함", "쾌적함", "집중도"]
+]
+
+
+fig = px.imshow(
+    heatmap_data,
+    text_auto=True,
+    aspect="auto",
+    labels={
+        "x": "평가 항목",
+        "y": "환기 방식",
+        "color": "평균 점수"
+    }
+)
+
+st.plotly_chart(fig)
