@@ -1,85 +1,319 @@
 import streamlit as st
-import pandas as pd
-import math
+import plotly.graph_objects as go
 
-st.set_page_config(page_title="Blood Buffer Simulator", page_icon="🩸")
 
-st.title("🩸 혈액 완충계 시뮬레이터")
-st.write("체중과 산 부하량에 따른 혈액 완충계의 변화를 단순 모델로 예측합니다.")
+# ==========================
+# 기본 설정
+# ==========================
 
-st.info("※ 본 프로그램은 탄산-탄산수소 이온 완충계를 단순화한 교육용 모델입니다.")
+st.set_page_config(
+    page_title="혈액 완충계 시뮬레이터",
+    page_icon="🩸",
+    layout="wide"
+)
 
-# ------------------------
+st.title("🩸 혈액 탄산-탄산수소 완충계 시뮬레이터")
+
+st.markdown("""
+이 프로그램은 혈액 내 탄산-탄산수소 이온 완충계를 단순화하여,
+산 부하 증가에 따른 완충 가능 범위를 계산하는 모델입니다.
+
+**가정**
+- 혈액량 = 체중의 7.5%
+- 혈액 내 HCO₃⁻ 농도 = 24 mmol/L
+- 산 1 mmol 첨가 시 HCO₃⁻ 1 mmol 소비
+""")
+
+st.info(
+    "※ 실제 인체에서는 폐와 신장 조절 등 다양한 항상성 과정이 함께 작용하므로 "
+    "본 모델은 완충계의 원리를 이해하기 위한 단순화 모델입니다."
+)
+
+
+# ==========================
 # 입력
-# ------------------------
+# ==========================
 
-weight = st.slider("체중 (kg)", 30, 100, 60)
-
-acid = st.slider("산 부하량 (mmol)", 0, 150, 20)
-
-# ------------------------
-# 기본 상수
-# ------------------------
-
-blood_ratio = 0.075          # 혈액량 = 체중의 7.5%
-HCO3_conc = 24               # mmol/L
-CO2 = 1.2                    # mmol/L (고정)
-pKa = 6.1
-
-blood_volume = weight * blood_ratio
-HCO3_total = blood_volume * HCO3_conc
-
-# 산 첨가 후
-HCO3_after = max(HCO3_total - acid, 0.01)
-
-HCO3_conc_after = HCO3_after / blood_volume
-
-pH = pKa + math.log10(HCO3_conc_after / CO2)
-
-# ------------------------
-# 결과 출력
-# ------------------------
-
-st.subheader("계산 결과")
+st.header("① 입력")
 
 col1, col2 = st.columns(2)
 
+
 with col1:
-    st.metric("예상 혈액량", f"{blood_volume:.2f} L")
+    weight = st.number_input(
+        "체중 (kg)",
+        min_value=30.0,
+        max_value=150.0,
+        value=60.0,
+        step=0.5
+    )
+
 
 with col2:
-    st.metric("예상 혈액 pH", f"{pH:.2f}")
+    acid = st.number_input(
+        "산 부하량 (mmol)",
+        min_value=0.0,
+        max_value=500.0,
+        value=20.0,
+        step=1.0
+    )
 
-if pH >= 7.35:
-    st.success("Good! 완충 작용이 비교적 잘 유지되는 상태")
-elif pH >= 7.20:
-    st.warning("Be careful! 완충능력이 감소하기 시작하는 구간")
+
+# ==========================
+# 계산
+# ==========================
+
+blood_volume = weight * 0.075
+
+initial_HCO3 = blood_volume * 24
+
+remaining_HCO3 = initial_HCO3 - acid
+
+if remaining_HCO3 < 0:
+    remaining_HCO3 = 0
+
+
+buffer_rate = (remaining_HCO3 / initial_HCO3) * 100
+
+
+# ==========================
+# 결과 출력
+# ==========================
+
+st.header("② 계산 결과")
+
+
+c1, c2, c3 = st.columns(3)
+
+
+with c1:
+    st.metric(
+        "예상 혈액량",
+        f"{blood_volume:.2f} L"
+    )
+
+
+with c2:
+    st.metric(
+        "초기 HCO₃⁻ 총량",
+        f"{initial_HCO3:.1f} mmol"
+    )
+
+
+with c3:
+    st.metric(
+        "남은 HCO₃⁻",
+        f"{remaining_HCO3:.1f} mmol"
+    )
+
+
+# ==========================
+# 최대 완충량 기능
+# ==========================
+
+st.header("③ 완충 한계 분석")
+
+
+col4, col5 = st.columns(2)
+
+
+with col4:
+    st.metric(
+        "최대 완충 가능 산 부하량",
+        f"{initial_HCO3:.1f} mmol"
+    )
+
+
+with col5:
+    st.metric(
+        "남은 완충 여유량",
+        f"{max(initial_HCO3-acid,0):.1f} mmol"
+    )
+
+
+if acid < initial_HCO3:
+
+    st.success(
+        f"현재 산 부하는 완충 가능한 범위입니다.\n\n"
+        f"이론적으로 약 {initial_HCO3-acid:.1f} mmol의 "
+        f"추가 산 부하까지 대응 가능합니다."
+    )
+
 else:
-    st.error("Warning!!!! 완충 한계를 넘어 pH가 크게 감소한 상태")
 
-# ------------------------
-# 그래프
-# ------------------------
+    st.error(
+        "현재 산 부하는 이론적 완충 한계를 초과했습니다."
+    )
 
-acid_list = []
-ph_list = []
 
-for a in range(0,151):
+# ==========================
+# 산 부하량 변화 그래프
+# ==========================
 
-    remain = max(HCO3_total-a,0.01)
+st.header("④ 산 부하량 증가에 따른 완충능 변화")
 
-    conc = remain/blood_volume
 
-    ph = pKa + math.log10(conc/CO2)
+acid_values = list(range(0, int(initial_HCO3)+50))
 
-    acid_list.append(a)
-    ph_list.append(ph)
 
-df = pd.DataFrame({
-    "산 부하량 (mmol)":acid_list,
-    "예상 pH":ph_list
-})
+buffer_values = []
 
-st.subheader("산 부하량에 따른 pH 변화")
 
-st.line_chart(df.set_index("산 부하량 (mmol)"))
+for a in acid_values:
+
+    remain = initial_HCO3 - a
+
+    if remain < 0:
+        remain = 0
+
+    buffer = (remain / initial_HCO3) * 100
+
+    buffer_values.append(buffer)
+
+
+
+fig = go.Figure()
+
+
+fig.add_trace(
+    go.Scatter(
+        x=acid_values,
+        y=buffer_values,
+        mode="lines",
+        name="완충능"
+    )
+)
+
+
+fig.add_trace(
+    go.Scatter(
+        x=[acid],
+        y=[buffer_rate],
+        mode="markers",
+        marker=dict(size=12),
+        name="현재 위치"
+    )
+)
+
+
+fig.update_layout(
+    title="산 부하량에 따른 남은 완충능",
+    xaxis_title="산 부하량 (mmol)",
+    yaxis_title="남은 완충능 (%)",
+    height=500
+)
+
+
+st.plotly_chart(
+    fig,
+    use_container_width=True
+)
+
+
+# ==========================
+# 체중별 비교
+# ==========================
+
+st.header("⑤ 체중별 완충 가능량 비교")
+
+
+weights = [45, 60, 80]
+
+
+fig2 = go.Figure()
+
+
+for w in weights:
+
+    blood = w * 0.075
+
+    max_buffer = blood * 24
+
+    buffer_list = []
+
+
+    for a in acid_values:
+
+        remain = max_buffer - a
+
+        if remain < 0:
+            remain = 0
+
+        buffer = remain / max_buffer * 100
+
+        buffer_list.append(buffer)
+
+
+
+    fig2.add_trace(
+        go.Scatter(
+            x=acid_values,
+            y=buffer_list,
+            mode="lines",
+            name=f"{w}kg"
+        )
+    )
+
+
+fig2.update_layout(
+    title="체중에 따른 완충능 변화 비교",
+    xaxis_title="산 부하량 (mmol)",
+    yaxis_title="남은 완충능 (%)",
+    height=500
+)
+
+
+st.plotly_chart(
+    fig2,
+    use_container_width=True
+)
+
+
+# ==========================
+# 계산 과정
+# ==========================
+
+st.header("⑥ 계산 과정")
+
+
+st.latex(
+    r"혈액량 = 체중 \times 0.075"
+)
+
+st.write(
+    f"{weight} × 0.075 = {blood_volume:.2f} L"
+)
+
+
+st.latex(
+    r"초기\ HCO_3^- = 혈액량 \times 24"
+)
+
+
+st.write(
+    f"{blood_volume:.2f} × 24 = {initial_HCO3:.1f} mmol"
+)
+
+
+st.latex(
+    r"남은\ HCO_3^- = 초기\ HCO_3^- - 산\ 부하량"
+)
+
+
+st.write(
+    f"{initial_HCO3:.1f} - {acid:.1f} = {remaining_HCO3:.1f} mmol"
+)
+
+
+st.markdown("""
+### 그래프 해석
+
+- **x축:** 산 부하량(mmol)
+- **y축:** 남은 완충능(%)
+
+산 부하량이 증가할수록 탄산수소 이온이 소비되어
+완충 가능한 여유량이 감소한다.
+
+그래프가 0%에 가까워지는 지점은
+이 모델에서 완충 물질이 모두 소모되는 이론적 한계점이다.
+""")
