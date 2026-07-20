@@ -1,88 +1,85 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import streamlit as st
+import pandas as pd
+import math
 
+st.set_page_config(page_title="Blood Buffer Simulator", page_icon="🩸")
 
-# --------------------------
+st.title("🩸 혈액 완충계 시뮬레이터")
+st.write("체중과 산 부하량에 따른 혈액 완충계의 변화를 단순 모델로 예측합니다.")
+
+st.info("※ 본 프로그램은 탄산-탄산수소 이온 완충계를 단순화한 교육용 모델입니다.")
+
+# ------------------------
+# 입력
+# ------------------------
+
+weight = st.slider("체중 (kg)", 30, 100, 60)
+
+acid = st.slider("산 부하량 (mmol)", 0, 150, 20)
+
+# ------------------------
 # 기본 상수
-# --------------------------
+# ------------------------
 
-blood_ratio = 0.075       # 체중 대비 혈액량
-HCO3_concentration = 24  # mmol/L
+blood_ratio = 0.075          # 혈액량 = 체중의 7.5%
+HCO3_conc = 24               # mmol/L
+CO2 = 1.2                    # mmol/L (고정)
 pKa = 6.1
 
+blood_volume = weight * blood_ratio
+HCO3_total = blood_volume * HCO3_conc
 
-# --------------------------
-# pH 계산 함수
-# --------------------------
+# 산 첨가 후
+HCO3_after = max(HCO3_total - acid, 0.01)
 
-def calculate_pH(weight, acid):
+HCO3_conc_after = HCO3_after / blood_volume
 
-    # 혈액량 계산
-    blood_volume = weight * blood_ratio
+pH = pKa + math.log10(HCO3_conc_after / CO2)
 
-    # 초기 HCO3 총량
-    HCO3_total = HCO3_concentration * blood_volume
+# ------------------------
+# 결과 출력
+# ------------------------
 
-    # 산 첨가 후 HCO3 감소
-    HCO3_after = HCO3_total - acid
+st.subheader("계산 결과")
 
-    # 완충능 초과
-    if HCO3_after <= 0:
-        return 6.5
+col1, col2 = st.columns(2)
 
-    # CO2 증가 단순 모델
-    CO2 = 1.2 + acid / blood_volume
+with col1:
+    st.metric("예상 혈액량", f"{blood_volume:.2f} L")
 
-    HCO3 = HCO3_after / blood_volume
+with col2:
+    st.metric("예상 혈액 pH", f"{pH:.2f}")
 
-    pH = pKa + np.log10(HCO3 / CO2)
-
-    return pH
-
-
-# --------------------------
-# 사용자 입력
-# --------------------------
-
-weight = float(input("체중(kg)을 입력하세요: "))
-acid = float(input("산 부하량(mmol)을 입력하세요: "))
-
-
-initial_pH = calculate_pH(weight, 0)
-final_pH = calculate_pH(weight, acid)
-
-
-print("---------------------")
-print(f"예상 혈액량 : {weight*0.075:.2f} L")
-print(f"초기 pH : {initial_pH:.2f}")
-print(f"산 첨가 후 pH : {final_pH:.2f}")
-
-
-if final_pH >= 7.35:
-    print("상태 : 완충 작용 유지")
+if pH >= 7.35:
+    st.success("완충 작용이 비교적 잘 유지되는 상태")
+elif pH >= 7.20:
+    st.warning("완충능이 감소하기 시작하는 구간")
 else:
-    print("상태 : 완충능력 감소")
+    st.error("완충 한계를 넘어 pH가 크게 감소한 상태")
 
+# ------------------------
+# 그래프
+# ------------------------
 
-# --------------------------
-# 그래프 출력
-# --------------------------
+acid_list = []
+ph_list = []
 
-acid_values = np.linspace(0, 200, 100)
+for a in range(0,151):
 
-pH_values = []
+    remain = max(HCO3_total-a,0.01)
 
-for a in acid_values:
-    pH_values.append(calculate_pH(weight, a))
+    conc = remain/blood_volume
 
+    ph = pKa + math.log10(conc/CO2)
 
-plt.plot(acid_values, pH_values)
+    acid_list.append(a)
+    ph_list.append(ph)
 
-plt.xlabel("Added acid (mmol)")
-plt.ylabel("Blood pH")
+df = pd.DataFrame({
+    "산 부하량 (mmol)":acid_list,
+    "예상 pH":ph_list
+})
 
-plt.title("Effect of Acid Load on Blood Buffer System")
+st.subheader("산 부하량에 따른 pH 변화")
 
-plt.grid()
-
-plt.show()
+st.line_chart(df.set_index("산 부하량 (mmol)"))
