@@ -51,11 +51,11 @@ with col2:
     st.metric("예상 혈액 pH", f"{pH:.2f}")
 
 if pH >= 7.35:
-    st.success("완충 작용이 비교적 잘 유지되는 상태")
+    st.success("Good! 완충 작용이 비교적 잘 유지되는 상태")
 elif pH >= 7.20:
-    st.warning("완충능이 감소하기 시작하는 구간")
+    st.warning("Be careful! 완충능력이 감소하기 시작하는 구간")
 else:
-    st.error("완충 한계를 넘어 pH가 크게 감소한 상태")
+    st.error("Warning!!!! 완충 한계를 넘어 pH가 크게 감소한 상태")
 
 # ------------------------
 # 그래프
